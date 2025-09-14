@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{{ exam.title }} — Exam</title>
+  <link rel="stylesheet" href="/static/css/exam.css"/>
+</head>
+<body>
+  <div class="container exam-card">
+    <header>
+      <h1>{{ exam.title }}</h1>
+      <div id="timer">Time left: <span id="time"></span></div>
+      <form id="logoutForm" action="/logout" method="post"><button class="btn small">Logout</button></form>
+    </header>
+
+    <main>
+      <div id="questionArea">
+        <!-- question UI populated by template -->
+        {% for q in questions %}
+        <div class="question-pane" data-qid="{{ q.q_id }}" data-index="{{ loop.index0 }}" style="display: {% if loop.index0==0 %}block{% else %}none{% endif %}">
+          <h3>Q{{ loop.index }}: {{ q.question_text }}</h3>
+          <textarea id="answer_{{ q.q_id }}" class="answer-box" placeholder="Speak or use voice to dictate your answer..."></textarea>
+          <div class="controls">
+            <button class="btn" id="prevBtn" onclick="previousQuestion(event)">Previous</button>
+            <button class="btn" id="nextBtn" onclick="nextQuestion(event)">Next</button>
+            <button class="btn" id="saveBtn" onclick="saveAnswer(event)">Save</button>
+            <button class="btn primary" id="submitBtn" onclick="submitExam(event)">Submit Exam</button>
+            <button class="btn" id="dictateBtn" onclick="toggleDictation(event)">Start Dictation</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </main>
+    <div id="warn" class="muted"></div>
+  </div>
+
+  <script>
+    window.EXAM_DATA = {
+      exam_id: {{ exam.exam_id }},
+      duration_minutes: {{ exam.duration_minutes }},
+      questions: [
+        {% for q in questions %}
+        { q_id: {{ q.q_id }}, text: `{{ q.question_text | replace("\n","\\n") }}` }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ],
+      user_id: {{ user_id }}
+    };
+  </script>
+
+  <script src="/static/js/voiceToText.js"></script>
+  <script src="/static/js/navigation.js"></script>
+  <script src="/static/js/exam.js"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Login - VoxiScribe</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+  <div class="container form-card">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <label>Email <input type="email" id="email" name="email" required></label>
+      <label>Password <input type="password" id="password" name="password" required></label>
+      <button type="submit" class="btn">Login</button>
+    </form>
+
+    <div id="biometricArea" style="display:none;">
+      <h3>Verify with Face</h3>
+      <video id="loginPreview" autoplay playsinline width="320" height="240"></video>
+      <button id="startCam" class="btn">Start Camera</button>
+      <button id="captureVerify" class="btn">Capture & Verify Face</button>
+
+      <h3>Or verify voice</h3>
+      <button id="startRec" class="btn">Start Rec</button>
+      <button id="stopRec" class="btn">Stop & Verify</button>
+      <p id="status"></p>
+    </div>
+  </div>
+
+  <script src="/static/js/faceAuth.js"></script>
+  <script src="/static/js/voiceToText.js"></script>
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(loginForm);
+      const res = await fetch('/login', {method:'POST', body: fd});
+      const j = await res.json();
+      if (j.success) {
+        // show biometric area
+        document.getElementById('biometricArea').style.display = 'block';
+        document.getElementById('loginForm').style.display = 'none';
+      } else {
+        alert(j.message || 'Login failed');
+      }
+    });
+
+    document.getElementById('startCam').onclick = () => startPreview('loginPreview');
+
+    document.getElementById('captureVerify').onclick = async () => {
+      const blob = await captureImageBlob('loginPreview');
+      const fd = new FormData();
+      fd.append('image', blob, 'snap.jpg');
+      const res = await fetch('/verify/face', {method:'POST', body: fd});
+      const j = await res.json();
+      if (j.success) {
+        window.location = j.redirect || '/student/dashboard';
+      } else {
+        alert('Face verify failed: ' + (j.message || JSON.stringify(j)));
+      }
+    };
+
+    // voice verify (simple)
+    document.getElementById('startRec').onclick = () => startRecording();
+    document.getElementById('stopRec').onclick = async () => {
+      const blob = await stopRecording();
+      const fd = new FormData();
+      fd.append('audio', blob, 'login_voice.wav');
+      const res = await fetch('/verify/voice', {method:'POST', body: fd});
+      const j = await res.json();
+      if (j.success) window.location = j.redirect || '/student/dashboard';
+      else alert('Voice verify failed');
+    };
+  </script>
+</body>
+</html>

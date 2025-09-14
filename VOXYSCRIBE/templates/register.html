@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Register - VoxiScribe</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+  <div class="container form-card">
+    <h2>Register (Student)</h2>
+    <form id="registerForm">
+      <label>Name <input name="name" id="name" required /></label>
+      <label>Email <input name="email" id="email" type="email" required /></label>
+      <label>Password <input name="password" id="password" type="password" required /></label>
+      <button type="submit" class="btn">Create account</button>
+    </form>
+
+    <hr/>
+
+    <h3>Face capture</h3>
+    <video id="preview" autoplay playsinline width="320" height="240"></video>
+    <div>
+      <button id="startCam" class="btn">Start Camera</button>
+      <button id="captureFace" class="btn">Capture Face</button>
+    </div>
+
+    <h3>Voice sample</h3>
+    <p>Record a short voice sample (5-8 seconds).</p>
+    <div>
+      <button id="startRec" class="btn">Start Recording</button>
+      <button id="stopRec" class="btn">Stop Recording</button>
+      <p id="recStatus"></p>
+    </div>
+
+    <p id="message" class="muted"></p>
+  </div>
+
+  <script src="/static/js/faceAuth.js"></script>
+  <script src="/static/js/voiceToText.js"></script>
+  <script>
+    const registerForm = document.getElementById('registerForm');
+    let lastUserId = null;
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(registerForm);
+      const res = await fetch('/register', {method:'POST', body: formData});
+      const json = await res.json();
+      if (json.success) {
+        lastUserId = json.user_id;
+        document.getElementById('message').innerText = 'User created. Now capture face and voice.';
+      } else {
+        alert(json.message || 'Error');
+      }
+    });
+
+    // camera handling uses faceAuth.js helpers
+    const startCamBtn = document.getElementById('startCam');
+    startCamBtn.onclick = () => startPreview('preview');
+
+    document.getElementById('captureFace').onclick = async () => {
+      if (!lastUserId) return alert('Create account first.');
+      const blob = await captureImageBlob('preview');
+      const fd = new FormData();
+      fd.append('user_id', lastUserId);
+      fd.append('image', blob, 'face.jpg');
+      const res = await fetch('/register/face', {method:'POST', body: fd});
+      const j = await res.json();
+      if (j.success) {
+        alert('Face registered');
+      } else alert(JSON.stringify(j));
+    };
+
+    // voice recording uses voiceToText.js helpers
+    let recordedBlob = null;
+    document.getElementById('startRec').onclick = async () => {
+      startRecording();
+      document.getElementById('recStatus').innerText = 'Recording...';
+    };
+    document.getElementById('stopRec').onclick = async () => {
+      recordedBlob = await stopRecording();
+      document.getElementById('recStatus').innerText = 'Saved sample. Uploading...';
+      if (!lastUserId) return alert('Create account first.');
+      const fd = new FormData();
+      fd.append('user_id', lastUserId);
+      fd.append('audio', recordedBlob, 'voice.wav');
+      const res = await fetch('/register/voice', {method:'POST', body: fd});
+      const j = await res.json();
+      if (j.success) {
+        document.getElementById('recStatus').innerText = 'Voice sample uploaded.';
+      } else {
+        document.getElementById('recStatus').innerText = 'Upload failed.';
+      }
+    };
+  </script>
+</body>
+</html>

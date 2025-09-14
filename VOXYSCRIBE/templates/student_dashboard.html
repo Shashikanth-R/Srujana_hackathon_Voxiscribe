@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Student Dashboard - VoxiScribe</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css"/>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Student Dashboard</h1>
+      <form action="/logout" method="post"><button class="btn">Logout</button></form>
+    </header>
+
+    <section>
+      <h2>Available Exams</h2>
+      <ul>
+        {% for exam in exams %}
+          <li>
+            <strong>{{ exam.title }}</strong> — Duration: {{ exam.duration_minutes }} minutes
+            <a class="btn" href="/exam/{{ exam.exam_id }}/start">Take Exam</a>
+          </li>
+        {% else %}
+          <li>No exams configured.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+Flask>=2.2
+python-dotenv
+mysql-connector-python
+requests
+azure-cognitiveservices-vision-face
+azure-cognitiveservices-speech
+numpy
+scikit-learn
+werkzeug
+flask-cors
